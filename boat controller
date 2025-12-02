@@ -1,0 +1,73 @@
+using UnityEngine;
+
+[RequireComponent(typeof(Rigidbody))]
+public class BoatController : MonoBehaviour
+{
+    [Header("Mouvement")]
+    public float thrustForce = 800f;      // Force d'avancement (à ajuster)
+    public float turnTorque = 400f;       // Couple de rotation (yaw)
+    public float maxSpeed = 15f;          // m/s ≈ 54 km/h
+
+    [Header("Physique bateau")]
+    public Transform comMarker;           // Empty = Centre de masse (optionnel)
+    public float extraWaterDrag = 0.5f;   // amortissement horizontal supplémentaire
+
+    private Rigidbody rb;
+
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+
+        // Réglages de base du Rigidbody pour un drone marin 1:1
+        rb.mass = 200f;                               // ~200 kg
+        rb.drag = 1.2f;                               // résistance de l’eau
+        rb.angularDrag = 4f;                          // évite les vrilles
+        rb.useGravity = true;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+
+        // Centre de masse : soit via un objet "COM", soit valeur par défaut
+        if (comMarker != null)
+        {
+            rb.centerOfMass = comMarker.localPosition;
+        }
+        else
+        {
+            // un peu sous la coque et légèrement vers l’avant
+            rb.centerOfMass = new Vector3(0f, -0.3f, 0.4f);
+        }
+    }
+
+    void FixedUpdate()
+    {
+        // Entrées utilisateur
+        float forwardInput = Input.GetAxis("Vertical");    // Z/S ou flèches
+        float turnInput    = Input.GetAxis("Horizontal");  // Q/D ou flèches
+
+        // Vitesse horizontale (on ignore la composante verticale)
+        Vector3 horizontalVelocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+        float speed = horizontalVelocity.magnitude;
+
+        // Limitation de la vitesse + propulsion
+        if (speed < maxSpeed)
+        {
+            // Force d’avancement dans l'axe du bateau
+            rb.AddForce(transform.forward * forwardInput * thrustForce, ForceMode.Force);
+        }
+
+        // Rotation (yaw) autour de l'axe vertical du bateau
+        if (Mathf.Abs(turnInput) > 0.01f)
+        {
+            // Légère réduction du couple à haute vitesse pour éviter le drift violent
+            float steerFactor = Mathf.Lerp(1f, 0.4f, speed / maxSpeed);
+            rb.AddTorque(transform.up * turnInput * turnTorque * steerFactor, ForceMode.Force);
+        }
+
+        // Amortissement horizontal supplémentaire (simule la traînée de l'eau)
+        if (speed > 0.01f)
+        {
+            Vector3 dragForce = -horizontalVelocity.normalized * speed * extraWaterDrag;
+            rb.AddForce(dragForce, ForceMode.Force);
+        }
+    }
+}
