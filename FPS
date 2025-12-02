@@ -1,0 +1,35 @@
+sing UnityEngine;
+
+public class CameraSwitcher : MonoBehaviour
+{
+public Camera thirdPersonCam;
+public Camera fpvCam;
+
+void Start()
+{
+    SetThirdPerson();
+}
+
+void Update()
+{
+    if (Input.GetKeyDown(KeyCode.C))
+    {
+        if (thirdPersonCam.enabled)
+            SetFPV();
+        else
+            SetThirdPerson();
+    }
+}
+
+void SetThirdPerson()
+{
+    thirdPersonCam.enabled = true;
+    fpvCam.enabled = false;
+}
+
+void SetFPV()
+{
+    thirdPersonCam.enabled = false;
+    fpvCam.enabled = true;
+}
+}
