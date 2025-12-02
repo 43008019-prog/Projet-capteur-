@@ -1,2 +1,2 @@
-# Projet-capteur-
-Realiser un capteur pour drone
+# Projet drone
+Realiser un simulateur pour drone
